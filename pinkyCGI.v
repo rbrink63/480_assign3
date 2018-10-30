@@ -1,5 +1,5 @@
 //
-`define INST_END_INDEX	1
+`define INST_END_INDEX	5
 
 //common bit lengths
 `define WORD 		[15:0]
@@ -61,7 +61,7 @@
 
 module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
 			  
-output `WORD PCfollow;
+output reg `WORD PCfollow;
 output `WORD ir;
 output halt;
 input `WORD R15;
@@ -80,6 +80,7 @@ always@(reset) begin
 end
 
 always@(posedge clk) begin
+	PCfollow <= PC;
 	PC <= PC + 1;
 end
 
@@ -87,14 +88,15 @@ assign irInitial = instmem[PC];
 assign CC = irInitial `CC;
 assign insertNOP = ((CC == `NE)&&(Z == 1))||((CC == `EQ)&&(Z == 0));
 assign ir = (insertNOP == 1)? {`OPNOP,11'h000} : instmem[PC];
-assign PCfollow = PC;
 assign halt = (ir `OPCODE == `OPSYS);
 
 endmodule
 
 
-module stage1(pc_follow, Rd_out, op2_out, ir, clk, reset, pc);
-output `WORD pc_follow, Rd_out, op2_out;
+module stage1(pc_follow, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
+output reg `WORD pc_follow;
+output `WORD Rd_out, op2_out;
+output reg [6:0] op_cc_out;
 input `WORD ir;
 input clk, reset;
 input `WORD pc;
@@ -121,12 +123,16 @@ assign op_code = ir `OPCODE;
 assign cc = ir `CC;
 assign immFlag = ir `IMM;
 assign Rd = ir `DEST;
+assign Rd_out = regfile[Rd];
+
+//`define Op2struct(IR, PRE, PREFLAG, REGFILE) \
+//	(IR `IMM ? { PREFLAG ? {PRE, IR `OP2} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
+assign op2_out = (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
+
 //assign pre = pre_temp;
 //assign pre = (ir[15] & ir[14]) ? ir `PRESIZE : pre_temp;
 //assign preFlag = ir[15] & ir[14];
-assign Rd_out = regfile[Rd];
 //assign Rn = ir `OP2;
-assign pc_follow = pc;
 
 always@(posedge clk)begin
     if(ir[15] & ir[14]) 
@@ -136,11 +142,12 @@ always@(posedge clk)begin
 	end
     else if(immFlag) preFlag = 0;
     
+    pc_follow <= pc;
+    op_cc_out <= {op_code, cc};
+    //Rd_out <= regfile[Rd];
+    //op2_out <= (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
 end
 
-//`define Op2struct(IR, PRE, PREFLAG, REGFILE) \
-//	(IR `IMM ? { PREFLAG ? {PRE, IR `OP2} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
-assign op2_out = (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
 
 
 endmodule
@@ -156,6 +163,7 @@ wire `WORD PCfollow_01, PCfollow_12, PCfollow_23, PCfollow_30;
 wire `WORD ir;
 wire haltedP;
 wire `WORD Rd_12, op2_12;
+wire [6:0] op_cc_12;
 
 always @(posedge clk) begin
 halt <= haltedP;
@@ -164,8 +172,8 @@ end
 //module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
 stage0 s0(PCfollow_01,ir,haltedP,16'h0000,1'b0,clk,reset);
 
-//module stage1(pc_follow, Rd_out, op2_out, ir, clk, reset, pc);
-stage1 s1(PCfollow_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
+//module stage1(pc_follow, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
+stage1 s1(PCfollow_12, op_cc_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
 
 always @(reset) begin
 	halt = 0;
