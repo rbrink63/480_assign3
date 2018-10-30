@@ -147,8 +147,14 @@ always@(posedge clk)begin
     //Rd_out <= regfile[Rd];
     //op2_out <= (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
 end
+endmodule
 
-
+module stage2(pc_follow, op_cc_out, value_out, op_cc_in, addr, data, clk, reset, pc);
+output reg `WORD pc_follow, value_out;
+output reg [6:0]  op_cc_out;
+input `WORD addr, data, pc;
+input clk, reset;
+input [6:0] op_cc_in;
 
 endmodule
 
@@ -163,7 +169,8 @@ wire `WORD PCfollow_01, PCfollow_12, PCfollow_23, PCfollow_30;
 wire `WORD ir;
 wire haltedP;
 wire `WORD Rd_12, op2_12;
-wire [6:0] op_cc_12;
+wire [6:0] op_cc_12, op_cc_23;
+wire `WORD result;
 
 always @(posedge clk) begin
 halt <= haltedP;
@@ -174,6 +181,9 @@ stage0 s0(PCfollow_01,ir,haltedP,16'h0000,1'b0,clk,reset);
 
 //module stage1(pc_follow, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
 stage1 s1(PCfollow_12, op_cc_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
+
+//module stage2(pc_follow, op_cc_out, value_out, op_cc_in, addr, data, clk, reset, pc);
+stage2 s2(PCfollow_23, op_cc_23, result, op_cc_12, Rd_12, op2_12, clk, reset, PCfollow_12);
 
 always @(reset) begin
 	halt = 0;
