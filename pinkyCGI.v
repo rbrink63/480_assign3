@@ -69,7 +69,6 @@ input Z,clk,reset;
 
 reg `WORD instmem `SIZE;	
 reg `WORD PC;				
-wire `WORD ir;	
 wire `WORD irInitial;
 wire checkCodes;
 wire [1:0] CC;
@@ -155,6 +154,45 @@ output reg [6:0]  op_cc_out;
 input `WORD addr, data, pc;
 input clk, reset;
 input [6:0] op_cc_in;
+reg `WORD datamem `SIZE;
+
+wire [4:0]op;
+assign op = op_cc_in[6:2];
+
+//do the ALU thing
+//when comparing to the PinKY instruction set
+//Rd is addr and Op2 is data
+
+always@(reset)begin
+    //only reading in 16 data mem locations for now
+    $readmemh("data.txt", datamem, 0, 15);
+end
+
+always@(posedge clk)begin
+    case(op)
+        `OPADD : begin value_out <= addr + data; end
+        `OPAND : begin value_out <= addr & data; end
+        `OPBIC : begin value_out <= addr & ~data; end
+        `OPEOR : begin value_out <= addr ^ data; end
+        `OPLDR : begin value_out <= datamem[data]; end
+        `OPMOV : begin value_out <= data; end
+        `OPMUL : begin value_out <= addr * data; end
+        `OPNEG : begin value_out <= -data; end
+        `OPORR : begin value_out <= addr | data; end
+        `OPSHA : begin value_out <= ((data>0) ? addr<<data : addr>>-data); end
+        `OPSTR : begin value_out <= data; datamem[addr] = data; end
+        `OPSLT : begin value_out <= (addr<data); end
+        `OPSUB : begin value_out <= addr - data; end
+    //we'll catch these in the default case
+    //    `OPSYS : begin ; end
+    //    `OPNOP : begin ; end
+    //    `OPPRE : begin ; end
+        default : begin value_out <= 16'h0000; end
+    endcase
+
+    pc_follow <= pc;
+    op_cc_out <= op_cc_in;
+end
 
 endmodule
 
