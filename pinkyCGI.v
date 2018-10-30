@@ -1,5 +1,5 @@
 //
-`define INST_END_INDEX	2
+`define INST_END_INDEX	1
 
 //common bit lengths
 `define WORD 		[15:0]
@@ -57,7 +57,7 @@
 
 //OP2 MACRO
 `define Op2struct(IR, PRE, PREFLAG, REGFILE) \
-	(IR `IMM ? { PREFLAG ? {PRE, IR `OP2} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
+	(IR `IMM ? { PREFLAG ? {IR `OP2, PRE} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
 
 module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
 			  
@@ -100,15 +100,20 @@ input clk, reset;
 input `WORD pc;
 
 wire [4:0] op_code;
-wire `PRESIZE pre;
 wire [1:0] cc;
 wire immFlag;
 
 reg `WORD regfile `REGS;
-wire preFlag;
+reg preFlag;
+reg `PRESIZE pre, pre_temp;
+
+
 
 always@(reset)begin
-    $readmemh("regs.txt", regfile);
+    $readmemh("regs.txt", regfile, 0, 15);
+    preFlag = 0;
+    pre = 0;
+
 end
 
 //split up instruction word into the separate chunks
@@ -116,14 +121,26 @@ assign op_code = ir `OPCODE;
 assign cc = ir `CC;
 assign immFlag = ir `IMM;
 assign Rd = ir `DEST;
-assign pre = ir `PRESIZE;
-assign preFlag = ir[15] & ir[14];
+//assign pre = pre_temp;
+//assign pre = (ir[15] & ir[14]) ? ir `PRESIZE : pre_temp;
+//assign preFlag = ir[15] & ir[14];
 assign Rd_out = regfile[Rd];
 //assign Rn = ir `OP2;
+assign pc_follow = pc;
+
+always@(posedge clk)begin
+    if(ir[15] & ir[14]) 
+	begin
+	preFlag = 1;
+	pre = ir `PRESIZE;
+	end
+    else if(immFlag) preFlag = 0;
+    
+end
 
 //`define Op2struct(IR, PRE, PREFLAG, REGFILE) \
 //	(IR `IMM ? { PREFLAG ? {PRE, IR `OP2} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
-assign op2_out = `Op2struct(ir, pre, preFlag, regfile);
+assign op2_out = (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
 
 
 endmodule
