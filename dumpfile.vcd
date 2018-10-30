@@ -1,5 +1,5 @@
 $date
-	Tue Oct 30 12:55:37 2018
+	Tue Oct 30 14:06:38 2018
 $end
 $version
 	Icarus Verilog
@@ -9,71 +9,141 @@ $timescale
 $end
 $scope module testbench $end
 $scope module PE $end
-$var wire 1 ! clk $end
-$var wire 1 " reset $end
-$var wire 16 # irP [15:0] $end
-$var wire 1 $ haltedP $end
-$var wire 16 % PCfollowP [15:0] $end
-$var reg 1 & halt $end
+$var wire 16 ! PCfollow_12 [15:0] $end
+$var wire 1 " clk $end
+$var wire 1 # reset $end
+$var wire 16 $ op2_12 [15:0] $end
+$var wire 16 % ir [15:0] $end
+$var wire 1 & haltedP $end
+$var wire 16 ' Rd_12 [15:0] $end
+$var wire 16 ( PCfollow_01 [15:0] $end
+$var reg 1 ) halt $end
 $scope module s0 $end
-$var wire 16 ' PCfollow [15:0] $end
-$var wire 16 ( R15 [15:0] $end
-$var wire 1 ) Z $end
-$var wire 1 ! clk $end
-$var wire 1 * insertNOP $end
-$var wire 16 + irInitial [15:0] $end
-$var wire 1 " reset $end
-$var wire 16 , ir [15:0] $end
-$var wire 1 $ halt $end
-$var wire 2 - CC [1:0] $end
-$var reg 16 . PC [15:0] $end
+$var wire 16 * PCfollow [15:0] $end
+$var wire 16 + R15 [15:0] $end
+$var wire 1 , Z $end
+$var wire 1 " clk $end
+$var wire 1 - insertNOP $end
+$var wire 16 . irInitial [15:0] $end
+$var wire 1 # reset $end
+$var wire 16 / ir [15:0] $end
+$var wire 1 & halt $end
+$var wire 2 0 CC [1:0] $end
+$var reg 16 1 PC [15:0] $end
+$upscope $end
+$scope module s1 $end
+$var wire 16 2 Rd_out [15:0] $end
+$var wire 1 " clk $end
+$var wire 16 3 ir [15:0] $end
+$var wire 16 4 pc [15:0] $end
+$var wire 16 5 pc_follow [15:0] $end
+$var wire 1 6 preFlag $end
+$var wire 1 # reset $end
+$var wire 12 7 pre [11:0] $end
+$var wire 5 8 op_code [4:0] $end
+$var wire 16 9 op2_out [15:0] $end
+$var wire 1 : immFlag $end
+$var wire 2 ; cc [1:0] $end
+$var wire 1 < Rd $end
 $upscope $end
 $upscope $end
 $upscope $end
 $enddefinitions $end
 #0
 $dumpvars
-b0 .
-b0 -
-b10100 ,
-b10100 +
-0*
+0<
+b0 ;
+1:
+b10001100110011 9
+b11000 8
+b100100011 7
+16
+bz 5
+b0 4
+b1100000100100011 3
+b0 2
+b0 1
+b0 0
+b1100000100100011 /
+b1100000100100011 .
+0-
+0,
+b0 +
+b0 *
 0)
 b0 (
 b0 '
 0&
-b0 %
-0$
-b10100 #
+b1100000100100011 %
+b10001100110011 $
+0#
 0"
-0!
+bz !
 $end
 #10
-1"
+1#
 #20
-0"
+0#
 #30
-1$
-b1001100000000000 #
-b1001100000000000 ,
-b1001100000000000 +
-b1 %
-b1 '
-b1 .
-1!
+b100 $
+b100 9
+1<
+06
+b0 8
+b100010100 7
+b100010100 %
+b100010100 /
+b100010100 3
+b100010100 .
+b1 (
+b1 *
+b1 4
+b1 1
+1"
 #40
-0!
+0"
 #50
-x*
-x$
-bx -
-bx #
-bx ,
+b0 $
+b0 9
+0<
 1&
-bx +
-b10 %
-b10 '
-b10 .
-1!
+b10011 8
+0:
+b100000000000 7
+b1001100000000000 %
+b1001100000000000 /
+b1001100000000000 3
+b1001100000000000 .
+b10 (
+b10 *
+b10 4
+b10 1
+1"
 #60
-0!
+0"
+#70
+bx $
+bx 9
+x-
+bx '
+bx 2
+x<
+x6
+x&
+bx 8
+bx ;
+x:
+bx 7
+bx 0
+bx %
+bx /
+bx 3
+bx .
+b11 (
+b11 *
+b11 4
+b11 1
+1)
+1"
+#80
+0"

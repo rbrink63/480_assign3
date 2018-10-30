@@ -1,3 +1,6 @@
+//
+`define INST_END_INDEX	2
+
 //common bit lengths
 `define WORD 		[15:0]
 `define OPCODE 		[15:11]
@@ -52,6 +55,10 @@
 `define NE			2
 `define EQ			3
 
+//OP2 MACRO
+`define Op2struct(IR, PRE, PREFLAG, REGFILE) \
+	(IR `IMM ? { PREFLAG ? {PRE, IR `OP2} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
+
 module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
 			  
 output `WORD PCfollow;
@@ -69,7 +76,7 @@ wire [1:0] CC;
 
 always@(reset) begin
 	PC = 0;
-	$readmemh("inst.txt", instmem);
+	$readmemh("inst.txt", instmem, 0, `INST_END_INDEX);
 end
 
 always@(posedge clk) begin
@@ -86,19 +93,62 @@ assign halt = (ir `OPCODE == `OPSYS);
 endmodule
 
 
+module stage1(pc_follow, Rd_out, op2_out, ir, clk, reset, pc);
+output `WORD pc_follow, Rd_out, op2_out;
+input `WORD ir;
+input clk, reset;
+input `WORD pc;
+
+wire [4:0] op_code;
+wire `PRESIZE pre;
+wire [1:0] cc;
+wire immFlag;
+
+reg `WORD regfile `REGS;
+wire preFlag;
+
+always@(reset)begin
+    $readmemh("regs.txt", regfile);
+end
+
+//split up instruction word into the separate chunks
+assign op_code = ir `OPCODE;
+assign cc = ir `CC;
+assign immFlag = ir `IMM;
+assign Rd = ir `DEST;
+assign pre = ir `PRESIZE;
+assign preFlag = ir[15] & ir[14];
+assign Rd_out = regfile[Rd];
+//assign Rn = ir `OP2;
+
+//`define Op2struct(IR, PRE, PREFLAG, REGFILE) \
+//	(IR `IMM ? { PREFLAG ? {PRE, IR `OP2} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
+assign op2_out = `Op2struct(ir, pre, preFlag, regfile);
+
+
+endmodule
+
+
 module processor(halt, reset, clk);
 output reg halt;
 input reset, clk;
 
-wire `WORD PCfollowP;
-wire `WORD irP;
+//the underscore<digit><digit> notation indicates control flow
+//for example _12 means it goes from stage 1 to stage 2
+wire `WORD PCfollow_01, PCfollow_12, PCfollow_23, PCfollow_30;
+wire `WORD ir;
 wire haltedP;
+wire `WORD Rd_12, op2_12;
 
 always @(posedge clk) begin
 halt <= haltedP;
 end
 
-stage0 s0(PCfollowP,irP,haltedP,1'b0,1'b0,clk,reset);
+//module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
+stage0 s0(PCfollow_01,ir,haltedP,16'h0000,1'b0,clk,reset);
+
+//module stage1(pc_follow, Rd_out, op2_out, ir, clk, reset, pc);
+stage1 s1(PCfollow_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
 
 always @(reset) begin
 	halt = 0;
