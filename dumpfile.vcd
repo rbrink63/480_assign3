@@ -1,5 +1,5 @@
 $date
-	Tue Oct 30 17:06:05 2018
+	Tue Oct 30 17:55:41 2018
 $end
 $version
 	Icarus Verilog
@@ -59,15 +59,17 @@ $var wire 7 D op_cc_in [6:0] $end
 $var wire 16 E pc [15:0] $end
 $var wire 1 " reset $end
 $var wire 5 F op [4:0] $end
-$var reg 7 G op_cc_out [6:0] $end
-$var reg 16 H pc_follow [15:0] $end
-$var reg 16 I value_out [15:0] $end
+$var reg 16 G data_latch [15:0] $end
+$var reg 7 H op_cc_out [6:0] $end
+$var reg 16 I pc_follow [15:0] $end
+$var reg 16 J value_out [15:0] $end
 $upscope $end
 $upscope $end
 $upscope $end
 $enddefinitions $end
 #0
 $dumpvars
+bx J
 bx I
 bx H
 bx G
@@ -132,10 +134,11 @@ b0 8
 b1100000 %
 b1100000 >
 b1100000 D
-b0 #
-b0 I
+b0 G
 b100100011 @
 1A
+b0 #
+b0 J
 1!
 #40
 0!
@@ -148,7 +151,8 @@ b1010000000000000 '
 b1010000000000000 2
 b1010000000000000 7
 b1100000 $
-b1100000 G
+b1100000 H
+b1001000110100 G
 b0 %
 b0 >
 b0 D
@@ -180,17 +184,20 @@ b1 +
 b1 ?
 b1 E
 b0 $
-b0 G
-b0 *
 b0 H
+b0 *
+b0 I
+b0 G
+b1001000110100 #
+b1001000110100 J
 1!
 #80
 0!
 #90
 b1010000 $
-b1010000 G
+b1010000 H
 b1 *
-b1 H
+b1 I
 b10 +
 b10 ?
 b10 E
@@ -198,6 +205,8 @@ b100 4
 b11 ,
 b11 5
 b11 8
+b0 #
+b0 J
 1!
 #100
 0!
@@ -216,7 +225,7 @@ b11 +
 b11 ?
 b11 E
 b10 *
-b10 H
+b10 I
 1!
 #120
 0!
@@ -240,7 +249,7 @@ bx 2
 bx 7
 1-
 b11 *
-b11 H
+b11 I
 b1001100 %
 b1001100 >
 b1001100 D
