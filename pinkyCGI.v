@@ -150,7 +150,7 @@ endmodule
 
 module stage2(pc_follow, op_cc_out, value_out, op_cc_in, addr, data, clk, reset, pc);
 output reg `WORD pc_follow;
-output `WORD value_out;
+output reg `WORD value_out;
 output reg [6:0]  op_cc_out;
 input `WORD addr, data, pc;
 input clk, reset;
@@ -170,32 +170,28 @@ always@(reset)begin
     $readmemh("data.txt", datamem, 0, 15);
 end
 
-case(op)
-    `OPADD : begin assign value_out = addr + data_latch; end
-    `OPAND : begin assign value_out = addr & data_latch; end
-    `OPBIC : begin assign value_out = addr & ~data_latch; end
-    `OPEOR : begin assign value_out = addr ^ data_latch; end
-    `OPLDR : begin assign value_out = datamem[data_latch]; end
-    `OPMOV : begin assign value_out = data_latch; end
-    `OPMUL : begin assign value_out = addr * data_latch; end
-    `OPNEG : begin assign value_out = -data_latch; end
-    `OPORR : begin assign value_out = addr | data_latch; end
-    `OPSHA : begin assign value_out = (data_latch>0) ? addr<<data_latch : addr>>-data_latch; end
-//////////////////    `OPSTR : begin assign value_out = data_latch; end
-//    `OPSTR : begin 
-//	    assign value_out = data_latch; 
-//	   // datamem[addr] = data_latch; 
-//	    end
-    `OPSLT : begin assign value_out = (addr<data_latch); end
-    `OPSUB : begin assign value_out = addr - data_latch; end
-//we'll catch these in the default case
-//    `OPSYS : begin ; end
-//    `OPNOP : begin ; end
-//    `OPPRE : begin ; end
-    default : begin assign value_out = 16'h0000; end
-endcase
 
 always@(posedge clk)begin
+    case(op)
+        `OPADD : begin  value_out = addr + data_latch; end
+        `OPAND : begin  value_out = addr & data_latch; end
+        `OPBIC : begin  value_out = addr & ~data_latch; end
+        `OPEOR : begin  value_out = addr ^ data_latch; end
+        `OPLDR : begin  value_out = datamem[data_latch]; end
+        `OPMOV : begin  value_out = data_latch; end
+        `OPMUL : begin  value_out = addr * data_latch; end
+        `OPNEG : begin  value_out = -data_latch; end
+        `OPORR : begin  value_out = addr | data_latch; end
+        `OPSHA : begin  value_out = (data_latch>0) ? addr<<data_latch : addr>>-data_latch; end
+        `OPSTR : begin datamem[addr] = data_latch; value_out = data_latch; end
+        `OPSLT : begin  value_out = (addr<data_latch); end
+        `OPSUB : begin  value_out = addr - data_latch; end
+    //we'll catch these in the default case
+    //    `OPSYS : begin ; end
+    //    `OPNOP : begin ; end
+    //    `OPPRE : begin ; end
+        default : begin value_out = 16'h0000; end
+    endcase
     data_latch <= data;
     pc_follow <= pc;
     op_cc_out <= op_cc_in;
