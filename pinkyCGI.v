@@ -199,6 +199,11 @@ end
 
 endmodule
 
+module stage3(result);
+input `WORD result;
+
+endmodule
+
 
 module processor(halt, reset, clk);
 output reg halt;
@@ -225,6 +230,8 @@ stage1 s1(PCfollow_12, op_cc_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
 
 //module stage2(pc_follow, op_cc_out, value_out, op_cc_in, addr, data, clk, reset, pc);
 stage2 s2(PCfollow_23, op_cc_23, result, op_cc_12, Rd_12, op2_12, clk, reset, PCfollow_12);
+
+stage3 s3(result);
 
 always @(reset) begin
 	halt = 0;

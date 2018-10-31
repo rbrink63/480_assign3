@@ -1,5 +1,5 @@
 $date
-	Wed Oct 31 14:42:55 2018
+	Wed Oct 31 14:47:49 2018
 $end
 $version
 	Icarus Verilog
@@ -64,11 +64,15 @@ $var reg 7 H op_cc_out [6:0] $end
 $var reg 16 I pc_follow [15:0] $end
 $var reg 16 J value_out [15:0] $end
 $upscope $end
+$scope module s3 $end
+$var wire 16 K result [15:0] $end
+$upscope $end
 $upscope $end
 $upscope $end
 $enddefinitions $end
 #0
 $dumpvars
+bx K
 bx J
 bx I
 bx H
@@ -139,6 +143,7 @@ b100100011 @
 1A
 b0 #
 b0 J
+b0 K
 1!
 #40
 0!
@@ -190,6 +195,7 @@ b0 I
 b0 G
 b1001000110100 #
 b1001000110100 J
+b1001000110100 K
 1!
 #80
 0!
@@ -207,6 +213,7 @@ b11 5
 b11 8
 b0 #
 b0 J
+b0 K
 1!
 #100
 0!
