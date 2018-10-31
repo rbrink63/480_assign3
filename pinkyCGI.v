@@ -1,5 +1,5 @@
 //
-`define INST_END_INDEX	6
+`define INST_END_INDEX	9
 
 //common bit lengths
 `define WORD 		[15:0]
@@ -92,10 +92,10 @@ assign halt = (ir `OPCODE == `OPSYS);
 endmodule
 
 
-module stage1(pc_follow, pc_to_reg, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
+module stage1(pc_follow, pc_to_reg, ir_out, Rd_out, op2_out, ir, clk, reset, pc);
 output reg `WORD pc_follow;
 output `WORD Rd_out, op2_out;
-output reg [6:0] op_cc_out;
+output reg `WORD ir_out;
 input `WORD ir, pc_to_reg;
 input clk, reset;
 input `WORD pc;
@@ -142,24 +142,24 @@ always@(posedge clk)begin
     else if(immFlag) preFlag = 0;
     
     pc_follow <= pc;
-    op_cc_out <= {op_code, cc};
+    ir_out <= ir;
     //Rd_out <= regfile[Rd];
     //op2_out <= (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
 end
 endmodule
 
-module stage2(pc_follow, op_cc_out, value_out, op_cc_in, addr, data, clk, reset, pc);
+module stage2(pc_follow, ir_out, value_out, ir_in, addr, data, clk, reset, pc);
 output reg `WORD pc_follow;
 output reg `WORD value_out;
-output reg [6:0]  op_cc_out;
+output reg `WORD ir_out;
 input `WORD addr, data, pc;
 input clk, reset;
-input [6:0] op_cc_in;
+input `WORD ir_in;
 reg `WORD datamem `SIZE;
 reg `WORD data_latch;
 
 wire [4:0]op;
-assign op = op_cc_in[6:2];
+assign op = ir_in `OPCODE;
 
 //do the ALU thing
 //when comparing to the PinKY instruction set
@@ -194,14 +194,14 @@ always@(posedge clk)begin
     endcase
     data_latch <= data;
     pc_follow <= pc;
-    op_cc_out <= op_cc_in;
+    ir_out <= ir_in;
 end
 
 endmodule
 
-module stage3(pc_follow, z_out, op_cc_in, result, clk, reset, pc);
+module stage3(pc_follow, z_out, ir_in, result, clk, reset, pc);
 input `WORD result, pc;
-input [6:0] op_cc_in;
+input `WORD ir_in;
 input clk, reset;
 output reg `WORD pc_follow;
 output reg z_out; //should this be a reg?
@@ -209,19 +209,12 @@ output reg z_out; //should this be a reg?
 wire [1:0] cc;
 wire z;
 
-assign cc = op_cc_in[1:0];
+assign cc = ir_in `CC;
 
-//if(cc[0] & !cc[1])begin
-//    //we need to set Z reg appropriately
-//    case(result)
-//	16'h0000: assign z = 1'b1;
-//	default: assign z = 1'b0;
-//    endcase
-//end
+assign z = ((result == 16'h0000) & (cc == `S)) ? 1'b1 : 1'b0;
 
-always@(posedge clk)begin
-    z_out <= z; 
-end
+
+
 endmodule
 
 
@@ -232,10 +225,9 @@ input reset, clk;
 //the underscore<digit><digit> notation indicates control flow
 //for example _12 means it goes from stage 1 to stage 2
 wire `WORD PCfollow_01, PCfollow_12, PCfollow_23, PCs4_to_reg;
-wire `WORD ir;
+wire `WORD ir_01, ir_12, ir_23;
 wire haltedP;
 wire `WORD Rd_12, op2_12;
-wire [6:0] op_cc_12, op_cc_23;
 wire `WORD result;
 wire z;
 
@@ -244,16 +236,16 @@ halt <= haltedP;
 end
 
 //module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
-stage0 s0(PCfollow_01,ir,haltedP,16'h0000,1'b0,clk,reset);
+stage0 s0(PCfollow_01,ir_01,haltedP,16'h0000,z,clk,reset);
 
-//module stage1(pc_follow, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
-stage1 s1(PCfollow_12, PCs4_to_reg, op_cc_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
+//module stage1(pc_follow, pc_to_reg, ir_out, Rd_out, op2_out, ir, clk, reset, pc);
+stage1 s1(PCfollow_12, PCs4_to_reg, ir_12, Rd_12, op2_12, ir_01, clk, reset, PCfollow_01);
 
-//module stage2(pc_follow, op_cc_out, value_out, op_cc_in, addr, data, clk, reset, pc);
-stage2 s2(PCfollow_23, op_cc_23, result, op_cc_12, Rd_12, op2_12, clk, reset, PCfollow_12);
+//module stage2(pc_follow, ir_out, value_out, ir_in, addr, data, clk, reset, pc);
+stage2 s2(PCfollow_23, ir_23, result, ir_12, Rd_12, op2_12, clk, reset, PCfollow_12);
 
-//module stage3(pc_follow, z_out, op_cc_in, result, clk, reset, pc);
-stage3 s3(PCs4_to_reg, z, op_cc_23, result, clk, reset, PCfollow_23);
+//module stage3(pc_follow, z_out, ir_in, result, clk, reset, pc);
+stage3 s3(PCs4_to_reg, z, ir_23, result, clk, reset, PCfollow_23);
 
 always @(reset) begin
 	halt = 0;
