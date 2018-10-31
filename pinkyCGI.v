@@ -1,5 +1,5 @@
 //
-`define INST_END_INDEX	5
+`define INST_END_INDEX	6
 
 //common bit lengths
 `define WORD 		[15:0]
@@ -92,11 +92,11 @@ assign halt = (ir `OPCODE == `OPSYS);
 endmodule
 
 
-module stage1(pc_follow, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
+module stage1(pc_follow, pc_to_reg, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
 output reg `WORD pc_follow;
 output `WORD Rd_out, op2_out;
 output reg [6:0] op_cc_out;
-input `WORD ir;
+input `WORD ir, pc_to_reg;
 input clk, reset;
 input `WORD pc;
 
@@ -199,9 +199,29 @@ end
 
 endmodule
 
-module stage3(result);
-input `WORD result;
+module stage3(pc_follow, z_out, op_cc_in, result, clk, reset, pc);
+input `WORD result, pc;
+input [6:0] op_cc_in;
+input clk, reset;
+output reg `WORD pc_follow;
+output reg z_out; //should this be a reg?
 
+wire [1:0] cc;
+wire z;
+
+assign cc = op_cc_in[1:0];
+
+//if(cc[0] & !cc[1])begin
+//    //we need to set Z reg appropriately
+//    case(result)
+//	16'h0000: assign z = 1'b1;
+//	default: assign z = 1'b0;
+//    endcase
+//end
+
+always@(posedge clk)begin
+    z_out <= z; 
+end
 endmodule
 
 
@@ -211,12 +231,13 @@ input reset, clk;
 
 //the underscore<digit><digit> notation indicates control flow
 //for example _12 means it goes from stage 1 to stage 2
-wire `WORD PCfollow_01, PCfollow_12, PCfollow_23, PCfollow_30;
+wire `WORD PCfollow_01, PCfollow_12, PCfollow_23, PCs4_to_reg;
 wire `WORD ir;
 wire haltedP;
 wire `WORD Rd_12, op2_12;
 wire [6:0] op_cc_12, op_cc_23;
 wire `WORD result;
+wire z;
 
 always @(posedge clk) begin
 halt <= haltedP;
@@ -226,12 +247,13 @@ end
 stage0 s0(PCfollow_01,ir,haltedP,16'h0000,1'b0,clk,reset);
 
 //module stage1(pc_follow, op_cc_out, Rd_out, op2_out, ir, clk, reset, pc);
-stage1 s1(PCfollow_12, op_cc_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
+stage1 s1(PCfollow_12, PCs4_to_reg, op_cc_12, Rd_12, op2_12, ir, clk, reset, PCfollow_01);
 
 //module stage2(pc_follow, op_cc_out, value_out, op_cc_in, addr, data, clk, reset, pc);
 stage2 s2(PCfollow_23, op_cc_23, result, op_cc_12, Rd_12, op2_12, clk, reset, PCfollow_12);
 
-stage3 s3(result);
+//module stage3(pc_follow, z_out, op_cc_in, result, clk, reset, pc);
+stage3 s3(PCs4_to_reg, z, op_cc_23, result, clk, reset, PCfollow_23);
 
 always @(reset) begin
 	halt = 0;
