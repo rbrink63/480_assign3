@@ -1,5 +1,5 @@
 $date
-	Wed Oct 31 18:12:56 2018
+	Thu Nov  1 13:39:05 2018
 $end
 $version
 	Icarus Verilog
@@ -73,19 +73,17 @@ $var wire 16 M ir_in [15:0] $end
 $var wire 16 N pc [15:0] $end
 $var wire 1 " reset $end
 $var wire 16 O result [15:0] $end
-$var wire 1 P z $end
-$var wire 2 Q cc [1:0] $end
-$var reg 16 R pc_follow [15:0] $end
-$var reg 1 # z_out $end
+$var reg 2 P cc [1:0] $end
+$var reg 16 Q pc_follow [15:0] $end
+$var reg 1 # z_reg $end
 $upscope $end
 $upscope $end
 $upscope $end
 $enddefinitions $end
 #0
 $dumpvars
-bx R
 bx Q
-xP
+bx P
 bx O
 bx N
 bx M
@@ -130,7 +128,7 @@ bx '
 bx &
 b0 %
 bx $
-x#
+0#
 0"
 0!
 $end
@@ -139,7 +137,14 @@ $end
 #20
 0"
 #30
+b1 %
+b1 <
+b1 E
+b1100010001 (
+b1100010001 3
+b1100010001 8
 b0 H
+b1100010001 2
 b1 5
 b0 .
 b0 6
@@ -158,14 +163,16 @@ b0 O
 b11 %
 b11 <
 b11 E
-1P
-b1 Q
 b1100010011 (
 b1100010011 3
 b1100010011 8
 b1100010000 &
 b1100010000 J
 b1100010000 M
+b1 I
+b1100010001 '
+b1100010001 @
+b1100010001 F
 b0 -
 b0 A
 b0 G
@@ -197,10 +204,18 @@ b1100010011 F
 b1 -
 b1 A
 b1 G
+b1100010001 &
+b1100010001 J
+b1100010001 M
 b0 ,
 b0 K
 b0 N
 b11 I
+b1 $
+b1 L
+b1 O
+1#
+b1 P
 1!
 #80
 0!
@@ -232,7 +247,7 @@ b100 5
 b11 .
 b11 6
 b11 9
-0P
+0#
 b11 $
 b11 L
 b11 O
@@ -249,7 +264,6 @@ b1100010000 (
 b1100010000 3
 b1100010000 8
 b10100 H
-b0 Q
 b1100010000 2
 b101 5
 b100 .
@@ -301,6 +315,7 @@ b110 5
 b101 .
 b101 6
 b101 9
+b0 P
 b0 $
 b0 L
 b0 O
@@ -308,9 +323,7 @@ b0 O
 #140
 0!
 #150
-1P
 b10100 H
-b1 Q
 b111 5
 b110 .
 b110 6
@@ -331,8 +344,6 @@ b100 N
 #160
 0!
 #170
-0P
-b0 Q
 b1010000000000000 &
 b1010000000000000 J
 b1010000000000000 M
@@ -346,6 +357,8 @@ b1000 5
 b111 .
 b111 6
 b111 9
+1#
+b1 P
 1!
 #180
 0!
@@ -366,6 +379,7 @@ b111 G
 b110 ,
 b110 K
 b110 N
+b0 P
 1!
 #200
 0!

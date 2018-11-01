@@ -196,25 +196,32 @@ always@(posedge clk)begin
     pc_follow <= pc;
     ir_out <= ir_in;
 end
-
 endmodule
 
-module stage3(pc_follow, z_out, ir_in, result, clk, reset, pc);
+module stage3(pc_follow, z_reg, ir_in, result, clk, reset, pc);
 input `WORD result, pc;
 input `WORD ir_in;
 input clk, reset;
 output reg `WORD pc_follow;
-output reg z_out; //should this be a reg?
+output reg z_reg; //should this be a reg?
 
-wire [1:0] cc;
+reg [1:0] cc;
 wire z;
 
-assign cc = ir_in `CC;
 
-assign z = ((result == 16'h0000) & (cc == `S)) ? 1'b1 : 1'b0;
+//assign z = (cc == `S) ? z : (((result == 16'h0000) & (cc == `S)) ? 1'b1 : 1'b0);
 
+always@(reset)begin
+    z_reg = 0;
+end
 
-
+always@(posedge clk)begin
+    cc = ir_in `CC;
+    if (cc == `S)begin
+	if (result == 16'h0000) z_reg = 1'b1;
+	else z_reg = 1'b0;
+    end
+end
 endmodule
 
 
