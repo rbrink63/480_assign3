@@ -1,5 +1,5 @@
 //
-`define INST_END_INDEX	9
+`define INST_END_INDEX	20
 
 //common bit lengths
 `define WORD 		[15:0]
@@ -104,14 +104,12 @@ wire [4:0] op_code;
 wire [1:0] cc;
 wire immFlag;
 
-reg `WORD regfile `REGS;
 reg preFlag;
 reg `PRESIZE pre, pre_temp;
 
 
 
 always@(reset)begin
-    $readmemh("regs.txt", regfile, 0, 15);
     preFlag = 0;
     pre = 0;
 
@@ -122,11 +120,11 @@ assign op_code = ir `OPCODE;
 assign cc = ir `CC;
 assign immFlag = ir `IMM;
 assign Rd = ir `DEST;
-assign Rd_out = regfile[Rd];
+assign Rd_out = PE.regfile[Rd];
 
 //`define Op2struct(IR, PRE, PREFLAG, REGFILE) \
 //	(IR `IMM ? { PREFLAG ? {PRE, IR `OP2} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
-assign op2_out = (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
+assign op2_out = (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, PE.regfile);
 
 //assign pre = pre_temp;
 //assign pre = (ir[15] & ir[14]) ? ir `PRESIZE : pre_temp;
@@ -156,7 +154,7 @@ input `WORD addr, data, pc;
 input clk, reset;
 input `WORD ir_in;
 reg `WORD datamem `SIZE;
-reg `WORD data_latch;
+reg `WORD addr_latch, data_latch;
 
 wire [4:0]op;
 assign op = ir_in `OPCODE;
@@ -173,19 +171,19 @@ end
 
 always@(posedge clk)begin
     case(op)
-        `OPADD : begin  value_out = addr + data_latch; end
-        `OPAND : begin  value_out = addr & data_latch; end
-        `OPBIC : begin  value_out = addr & ~data_latch; end
-        `OPEOR : begin  value_out = addr ^ data_latch; end
-        `OPLDR : begin  value_out = datamem[data_latch]; end
-        `OPMOV : begin  value_out = data_latch; end
-        `OPMUL : begin  value_out = addr * data_latch; end
-        `OPNEG : begin  value_out = -data_latch; end
-        `OPORR : begin  value_out = addr | data_latch; end
-        `OPSHA : begin  value_out = (data_latch>0) ? addr<<data_latch : addr>>-data_latch; end
-        `OPSTR : begin datamem[addr] = data_latch; value_out = data_latch; end
-        `OPSLT : begin  value_out = (addr<data_latch); end
-        `OPSUB : begin  value_out = addr - data_latch; end
+        `OPADD : begin  value_out = addr_latch + data_latch;end
+        `OPAND : begin  value_out = addr_latch & data_latch;end
+        `OPBIC : begin  value_out = addr_latch & ~data_latch;end
+        `OPEOR : begin  value_out = addr_latch ^ data_latch;end
+        `OPLDR : begin  value_out = datamem[data_latch];end
+        `OPMOV : begin  value_out = data_latch;end
+        `OPMUL : begin  value_out = addr_latch * data_latch;end
+        `OPNEG : begin  value_out = -data_latch;end
+        `OPORR : begin  value_out = addr_latch | data_latch;end
+        `OPSHA : begin  value_out = (data_latch>0) ? addr_latch<<data_latch : addr_latch>>-data_latch;end
+        `OPSTR : begin datamem[addr_latch] = data_latch; value_out = data_latch;end
+        `OPSLT : begin  value_out = (addr_latch<data_latch);end
+        `OPSUB : begin  value_out = addr_latch - data_latch;end
     //we'll catch these in the default case
     //    `OPSYS : begin ; end
     //    `OPNOP : begin ; end
@@ -193,6 +191,7 @@ always@(posedge clk)begin
         default : begin value_out = 16'h0000; end
     endcase
     data_latch <= data;
+    addr_latch <= addr;
     pc_follow <= pc;
     ir_out <= ir_in;
 end
@@ -205,9 +204,13 @@ input clk, reset;
 output reg `WORD pc_follow;
 output reg z_reg; //should this be a reg?
 
+reg [4:0] opcode;
 reg [1:0] cc;
 wire z;
+wire Rd;
+reg dummy;
 
+assign Rd = ir_in `DEST;
 
 //assign z = (cc == `S) ? z : (((result == 16'h0000) & (cc == `S)) ? 1'b1 : 1'b0);
 
@@ -215,12 +218,26 @@ always@(reset)begin
     z_reg = 0;
 end
 
+
 always@(posedge clk)begin
     cc = ir_in `CC;
+    opcode = ir_in `OPCODE;
+
     if (cc == `S)begin
 	if (result == 16'h0000) z_reg = 1'b1;
 	else z_reg = 1'b0;
     end
+    
+    case(opcode)
+	//`OPSYS : begin dummy = 1; end
+	//`OPPRE : begin dummy = 1; end
+	`OPSYS : ;
+	`OPPRE : ;
+	`OPNOP : ;
+	default: begin PE.regfile[Rd] = result; end
+    endcase	
+	
+	
 end
 endmodule
 
@@ -237,6 +254,11 @@ wire haltedP;
 wire `WORD Rd_12, op2_12;
 wire `WORD result;
 wire z;
+reg `WORD regfile `REGS;
+
+always @(reset)begin
+    $readmemh("regs.txt", regfile, 0, 15);
+end
 
 always @(posedge clk) begin
 halt <= haltedP;
@@ -251,7 +273,7 @@ stage1 s1(PCfollow_12, PCs4_to_reg, ir_12, Rd_12, op2_12, ir_01, clk, reset, PCf
 //module stage2(pc_follow, ir_out, value_out, ir_in, addr, data, clk, reset, pc);
 stage2 s2(PCfollow_23, ir_23, result, ir_12, Rd_12, op2_12, clk, reset, PCfollow_12);
 
-//module stage3(pc_follow, z_out, ir_in, result, clk, reset, pc);
+//module stage3(pc_follow, z_reg, ir_in, result, clk, reset, pc);
 stage3 s3(PCs4_to_reg, z, ir_23, result, clk, reset, PCfollow_23);
 
 always @(reset) begin
