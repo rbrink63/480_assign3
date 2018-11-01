@@ -59,7 +59,7 @@
 `define Op2struct(IR, PRE, PREFLAG, REGFILE) \
 	(IR `IMM ? { PREFLAG ? {IR `OP2, PRE} : {12{IR[3]}}, IR `OP2 } : REGFILE[IR `OP2] )
 
-module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
+module stage0(PCfollow,ir,halt, R15,Z,clk,reset);
 			  
 output reg `WORD PCfollow;
 output `WORD ir;
@@ -67,12 +67,23 @@ output halt;
 input `WORD R15;
 input Z,clk,reset;
 
+reg [2:0] in_pipe `REGS;
+
 reg `WORD instmem `SIZE;	
 reg `WORD PC;				
 wire `WORD irInitial;
 wire checkCodes;
 wire [1:0] CC;
 reg [1:0] counter;
+reg a;
+
+initial begin
+    a = 0;
+    repeat(16)begin
+	in_pipe [a] = 2'b0;	
+	a = a + 1;
+    end
+end
 
 always@(reset) begin
 	PC = 0;
@@ -102,10 +113,12 @@ assign halt = (ir `OPCODE == `OPSYS);
 endmodule
 
 
-module stage1(pc_follow, pc_to_reg, ir_out, Rd_out, op2_out, ir, clk, reset, pc);
+module stage1(pc_follow, pc_to_reg, ir_out, Rd_out, op2_out, halt_out, halt_in, ir, clk, reset, pc);
 output reg `WORD pc_follow;
 output `WORD Rd_out, op2_out;
 output reg `WORD ir_out;
+output reg halt_out;
+input halt_in;
 input `WORD ir, pc_to_reg;
 input clk, reset;
 input `WORD pc;
@@ -123,7 +136,7 @@ reg `PRESIZE pre, pre_temp;
 always@(reset)begin
     preFlag = 0;
     pre = 0;
-
+    halt_out = 0;
 end
 
 //split up instruction word into the separate chunks
@@ -152,15 +165,18 @@ always@(posedge clk)begin
     
     pc_follow <= pc;
     ir_out <= ir;
+    halt_out <= halt_in;
     //Rd_out <= regfile[Rd];
     //op2_out <= (ir[15] & ir[14]) ? 16'h0000 :  `Op2struct(ir, pre, preFlag, regfile);
 end
 endmodule
 
-module stage2(pc_follow, ir_out, value_out, ir_in, addr, data, clk, reset, pc);
+module stage2(pc_follow, ir_out, value_out, halt_out, halt_in, ir_in, addr, data, clk, reset, pc);
 output reg `WORD pc_follow;
 output reg `WORD value_out;
 output reg `WORD ir_out;
+output reg halt_out;
+input halt_in;
 input `WORD addr, data, pc;
 input clk, reset;
 input `WORD ir_in;
@@ -177,6 +193,7 @@ assign op = ir_in `OPCODE;
 always@(reset)begin
     //only reading in 16 data mem locations for now
     $readmemh("data.txt", datamem, 0, 15);
+    halt_out = 0;
 end
 
 
@@ -205,13 +222,16 @@ always@(posedge clk)begin
     addr_latch <= addr;
     pc_follow <= pc;
     ir_out <= ir_in;
+    halt_out <= halt_in;
 end
 endmodule
 
-module stage3(pc_follow, z_reg, ir_in, result, clk, reset, pc);
+module stage3(pc_follow, z_reg, halt_out, halt_in, ir_in, result, clk, reset, pc);
 input `WORD result, pc;
 input `WORD ir_in;
 input clk, reset;
+output reg halt_out;
+input halt_in;
 output reg `WORD pc_follow;
 output reg z_reg; //should this be a reg?
 
@@ -227,6 +247,7 @@ assign Rd = ir_in `DEST;
 
 always@(reset)begin
     z_reg = 0;
+    halt_out = 0;
 end
 
 assign cc = ir_in `CC;
@@ -247,8 +268,8 @@ always@(posedge clk)begin
 	`OPNOP : ;
 	default: begin PE.regfile[Rd] = result; end
     endcase	
-	
-	
+
+    halt_out <= halt_in;	
 end
 endmodule
 
@@ -261,7 +282,7 @@ input reset, clk;
 //for example _12 means it goes from stage 1 to stage 2
 wire `WORD PCfollow_01, PCfollow_12, PCfollow_23, PCs4_to_reg;
 wire `WORD ir_01, ir_12, ir_23;
-wire haltedP;
+wire halt_01, halt_12, halt_23, halt_final;
 wire `WORD Rd_12, op2_12;
 wire `WORD result;
 wire z;
@@ -272,20 +293,20 @@ always @(reset)begin
 end
 
 always @(posedge clk) begin
-halt <= haltedP;
+halt <= halt_final;
 end
 
-//module stage0(PCfollow,ir,halt,R15,Z,clk,reset);
-stage0 s0(PCfollow_01,ir_01,haltedP,16'h0000,z,clk,reset);
+//module stage0(PCfollow,ir,halt, R15,Z,clk,reset);
+stage0 s0(PCfollow_01,ir_01,halt_01,16'h0000,z,clk,reset);
 
-//module stage1(pc_follow, pc_to_reg, ir_out, Rd_out, op2_out, ir, clk, reset, pc);
-stage1 s1(PCfollow_12, PCs4_to_reg, ir_12, Rd_12, op2_12, ir_01, clk, reset, PCfollow_01);
+//module stage1(pc_follow, pc_to_reg, ir_out, Rd_out, op2_out, halt_out, halt_in, ir, clk, reset, pc);
+stage1 s1(PCfollow_12, PCs4_to_reg, ir_12, Rd_12, op2_12, halt_12, halt_01, ir_01, clk, reset, PCfollow_01);
 
-//module stage2(pc_follow, ir_out, value_out, ir_in, addr, data, clk, reset, pc);
-stage2 s2(PCfollow_23, ir_23, result, ir_12, Rd_12, op2_12, clk, reset, PCfollow_12);
+//module stage2(pc_follow, ir_out, value_out, halt_out, halt_in, ir_in, addr, data, clk, reset, pc);
+stage2 s2(PCfollow_23, ir_23, result, halt_23, halt_12, ir_12, Rd_12, op2_12, clk, reset, PCfollow_12);
 
-//module stage3(pc_follow, z_reg, ir_in, result, clk, reset, pc);
-stage3 s3(PCs4_to_reg, z, ir_23, result, clk, reset, PCfollow_23);
+//module stage3(pc_follow, z_reg, halt_out, halt_in, ir_in, result, clk, reset, pc);
+stage3 s3(PCs4_to_reg, z, halt_final, halt_23, ir_23, result, clk, reset, PCfollow_23);
 
 always @(reset) begin
 	halt = 0;
