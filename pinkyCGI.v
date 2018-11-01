@@ -52,8 +52,8 @@
 //CC values
 `define	AL			0
 `define S 			1
-`define NE			2
-`define EQ			3
+`define EQ			2
+`define NE			3	
 
 //OP2 MACRO
 `define Op2struct(IR, PRE, PREFLAG, REGFILE) \
@@ -72,6 +72,7 @@ reg `WORD PC;
 wire `WORD irInitial;
 wire checkCodes;
 wire [1:0] CC;
+reg [1:0] counter;
 
 always@(reset) begin
 	PC = 0;
@@ -81,7 +82,16 @@ end
 always@(posedge clk) begin
 	PCfollow <= PC;
 	PC <= PC + 1;
-end
+    end
+//always@(posedge clk) begin
+//    if(counter == 0)begin
+//	PCfollow <= PC;
+//	PC <= PC + 1;
+//	counter <= 2;
+//    end else begin
+//	counter <= counter - 1;
+//    end
+//end
 
 assign irInitial = instmem[PC];
 assign CC = irInitial `CC;
@@ -101,6 +111,7 @@ input clk, reset;
 input `WORD pc;
 
 wire [4:0] op_code;
+wire [3:0] Rd;
 wire [1:0] cc;
 wire immFlag;
 
@@ -205,9 +216,9 @@ output reg `WORD pc_follow;
 output reg z_reg; //should this be a reg?
 
 reg [4:0] opcode;
-reg [1:0] cc;
+wire [1:0] cc;
 wire z;
-wire Rd;
+wire [3:0] Rd;
 reg dummy;
 
 assign Rd = ir_in `DEST;
@@ -218,9 +229,9 @@ always@(reset)begin
     z_reg = 0;
 end
 
+assign cc = ir_in `CC;
 
 always@(posedge clk)begin
-    cc = ir_in `CC;
     opcode = ir_in `OPCODE;
 
     if (cc == `S)begin

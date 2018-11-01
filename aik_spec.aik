@@ -1,26 +1,26 @@
 ;pattern for op2 reg instructions
-.OP .CC .Rd, .Rn := .this:5 .CC:2 not_imm:1 .Rd:4 .Rn:4
+.OP .CC .Rd, .Rn := .this:5 .CC:2 not_imm:1 .Rd:4 .Rn:4 40960:16 40960:16 40960:16
 
 ;pattern for op2 big_immed
-.OP .CC .Rd, #.C ?(.C > 7 || .C < -8) := 3:2 .CC:2 (.C >> 4):12 .this:5 .CC:2 imm:1 .Rd:4 .C:4
+.OP .CC .Rd, #.C ?(.C > 7 || .C < -8) := 3:2 .CC:2 (.C >> 4):12 .this:5 .CC:2 imm:1 .Rd:4 .C:4 40960:16 40960:16 40960:16
 
 ;pattern for op2 reg_immed
-.OP .CC .Rd, #.C := .this:5 .CC:2 imm:1 .Rd:4 .C:4
+.OP .CC .Rd, #.C := .this:5 .CC:2 imm:1 .Rd:4 .C:4 40960:16 40960:16 40960:16
 
 ;pattern for LDR/STR op2 reg instructions
-.OP .CC .Rd, [.Rn] := .this:5 .CC:2 not_imm:1 .Rd:4 .Rn:4
+.OP .CC .Rd, [.Rn] := .this:5 .CC:2 not_imm:1 .Rd:4 .Rn:4 40960:16 40960:16 40960:16
 
 ;pattern for LDR/STR  op2 big_immed
-.OP .CC .Rd, [#.C] ?(.C > 7 || .C < -8) := 3:2 .CC:2 (.C >> 4):12 .this:5 .CC:2 imm:1 .Rd:4 .C:4
+.OP .CC .Rd, [#.C] ?(.C > 7 || .C < -8) := 3:2 .CC:2 (.C >> 4):12 .this:5 .CC:2 imm:1 .Rd:4 .C:4 40960:16 40960:16 40960:16
 
 ;pattern for LDR/STR  op2 reg_immed
-.OP .CC .Rd, [#.C] := .this:5 .CC:2 imm:1 .Rd:4 .C:4
+.OP .CC .Rd, [#.C] := .this:5 .CC:2 imm:1 .Rd:4 .C:4 40960:16 40960:16 40960:16
 
 ;pattern for SYS
 .OP .CC := .this:5 .CC:2 0:9
 
 ;pattern for PRE
-PRE .CC #.C := 3:2 .CC:2 .C:12
+PRE .CC #.C := 3:2 .CC:2 .C:12 40960:16 40960:16 40960:16
 
 
 .alias .OP {ADD ADDF AND BIC EOR FTOI ITOF LDR MOV MUL MULF NEG ORR RECF SHA STR SLT SUB SUBF SYS}
@@ -36,4 +36,3 @@ PRE .CC #.C := 3:2 .CC:2 .C:12
 .const {r0	r1	r2	r3	r4	r5	r6	r7 r8 r9	r10	r11	r12	r13	r14	r15
 	13	sp	14	lr	15	pc}
 .const 0 .lowfirst
-
